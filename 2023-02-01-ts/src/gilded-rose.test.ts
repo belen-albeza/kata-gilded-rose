@@ -51,22 +51,82 @@ const anyLegendaryItem = () => {
   return new Item("Sulfuras", 0, 80);
 };
 
+const anyCommonItem = (sellIn: number, quality: number) => {
+  return new Item("A sword", sellIn, quality);
+};
+
+const anyAgedBrie = (sellIn: number, quality: number) => {
+  return new Item("Aged Brie", sellIn, quality);
+};
+
 describe("GildedRose", () => {
   describe("Sell In values", () => {
     it("Decreases in each update", () => {
       const gildedRose = new GildedRose([anyItem()]);
 
-      const result = gildedRose.updateQuality();
+      const [item, ..._] = gildedRose.updateQuality();
 
-      expect(result[0].sellIn).toBe(4);
+      expect(item.sellIn).toBe(anyItem().sellIn - 1);
     });
 
     it("Remains constant for legendary items", () => {
       const gildedRose = new GildedRose([anyLegendaryItem()]);
 
-      const result = gildedRose.updateQuality();
+      const [item, ..._] = gildedRose.updateQuality();
 
-      expect(result[0].sellIn).toBe(anyLegendaryItem().sellIn);
+      expect(item.sellIn).toBe(anyLegendaryItem().sellIn);
+    });
+  });
+
+  describe("Quality", () => {
+    it("Degrades for common items", () => {
+      const gildedRose = new GildedRose([anyCommonItem(1, 4)]);
+
+      const [item, ..._] = gildedRose.updateQuality();
+
+      expect(item.quality).toBe(3);
+    });
+
+    it("Degrades twice as fast once the sell by date has passed", () => {
+      const gildedRose = new GildedRose([anyCommonItem(0, 4)]);
+
+      const [item, ..._] = gildedRose.updateQuality();
+
+      expect(item.quality).toBe(2);
+    });
+
+    it("Never drops below zero", () => {
+      const gildedRose = new GildedRose([anyCommonItem(1, 0)]);
+
+      const [item, ..._] = gildedRose.updateQuality();
+
+      expect(item.quality).toBe(0);
+    });
+  });
+
+  describe("Aged Brie", () => {
+    it("Increases in quality the older it gets", () => {
+      const gildedRose = new GildedRose([anyAgedBrie(1, 10)]);
+
+      const [item, ..._] = gildedRose.updateQuality();
+
+      expect(item.quality).toBe(11);
+    });
+
+    it("Increases in quality twice as fast when the sell by date has passed", () => {
+      const gildedRose = new GildedRose([anyAgedBrie(0, 10)]);
+
+      const [item, ..._] = gildedRose.updateQuality();
+
+      expect(item.quality).toBe(12);
+    });
+
+    it("Never gets updated above 50", () => {
+      const gildedRose = new GildedRose([anyAgedBrie(1, 50)]);
+
+      const [item, ..._] = gildedRose.updateQuality();
+
+      expect(item.quality).toBe(50);
     });
   });
 });

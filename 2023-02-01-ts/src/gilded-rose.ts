@@ -11,6 +11,7 @@ export class Item {
 }
 
 export class GildedRose {
+  static MAX_QUALITY = 50;
   items: Array<Item>;
 
   constructor(items = [] as Array<Item>) {
@@ -47,12 +48,18 @@ export function kindForItemName(name: string): ItemKind {
 }
 
 export function updateQualityForItem(item: Item): Item {
+  const kind = kindForItemName(item.name);
+
+  if (kind === ItemKind.Common) {
+    return updateCommonItem(item);
+  } else if (kind === ItemKind.AgedBrie) {
+    return updateAgedBrie(item);
+  }
+
   let quality = item.quality;
   let sellIn = item.sellIn;
 
-  const kind = kindForItemName(item.name);
-
-  if (kind !== ItemKind.AgedBrie && kind !== ItemKind.BackstagePasses) {
+  if (kind !== ItemKind.BackstagePasses) {
     if (quality > 0) {
       if (kind != ItemKind.Legendary) {
         quality = quality - 1;
@@ -79,20 +86,14 @@ export function updateQualityForItem(item: Item): Item {
   sellIn = updateSellInForKind(sellIn, kind);
 
   if (sellIn < 0) {
-    if (kind !== ItemKind.AgedBrie) {
-      if (kind !== ItemKind.BackstagePasses) {
-        if (quality > 0) {
-          if (kind !== ItemKind.Legendary) {
-            quality = quality - 1;
-          }
+    if (kind !== ItemKind.BackstagePasses) {
+      if (quality > 0) {
+        if (kind !== ItemKind.Legendary) {
+          quality = quality - 1;
         }
-      } else {
-        quality = quality - quality;
       }
     } else {
-      if (quality < 50) {
-        quality = quality + 1;
-      }
+      quality = quality - quality;
     }
   }
 
@@ -101,4 +102,25 @@ export function updateQualityForItem(item: Item): Item {
 
 function updateSellInForKind(currentSellIn: number, kind: ItemKind): number {
   return kind !== ItemKind.Legendary ? currentSellIn - 1 : currentSellIn;
+}
+
+function updateCommonItem(item: Item): Item {
+  const sellIn = item.sellIn - 1;
+
+  const qualityDelta = sellIn >= 0 ? -1 : -2;
+  const quality = Math.max(0, item.quality + qualityDelta);
+
+  return new Item(item.name, sellIn, quality);
+}
+
+function updateAgedBrie(item: Item): Item {
+  const sellIn = item.sellIn - 1;
+
+  const qualityDelta = sellIn >= 0 ? 1 : 2;
+  const quality = Math.min(
+    Math.max(0, item.quality + qualityDelta),
+    GildedRose.MAX_QUALITY
+  );
+
+  return new Item(item.name, sellIn, quality);
 }
