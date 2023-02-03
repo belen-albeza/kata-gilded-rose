@@ -22,6 +22,10 @@ export class GildedRose {
     this.items = this.items.map(updateQualityForItem);
     return this.items;
   }
+
+  static clampQuality(quality: number): number {
+    return Math.min(Math.max(0, quality), this.MAX_QUALITY);
+  }
 }
 
 export enum ItemKind {
@@ -82,10 +86,7 @@ function updateAgedBrieItem(item: Item): Item {
   const sellIn = item.sellIn - 1;
 
   const qualityDelta = sellIn >= 0 ? 1 : 2;
-  const quality = Math.min(
-    Math.max(0, item.quality + qualityDelta),
-    GildedRose.MAX_QUALITY
-  );
+  const quality = GildedRose.clampQuality(item.quality + qualityDelta);
 
   return new Item(item.name, sellIn, quality);
 }
@@ -109,10 +110,7 @@ function updateBackstagePassItem(item: Item): Item {
   })(item.sellIn);
 
   const sellIn = item.sellIn - 1;
-  const quality = Math.min(
-    Math.max(0, item.quality + qualityDelta),
-    GildedRose.MAX_QUALITY
-  );
+  const quality = GildedRose.clampQuality(item.quality + qualityDelta);
 
   return new Item(item.name, sellIn, quality);
 }
@@ -120,7 +118,7 @@ function updateBackstagePassItem(item: Item): Item {
 function updateConjuredItem(item: Item): Item {
   const sellIn = item.sellIn - 1;
   const qualityDelta = sellIn >= 0 ? -2 : -4;
-  const quality = Math.max(0, item.quality + qualityDelta);
+  const quality = GildedRose.clampQuality(item.quality + qualityDelta);
 
   return new Item(item.name, sellIn, quality);
 }
