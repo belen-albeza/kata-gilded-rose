@@ -46,7 +46,7 @@ export function kindForItemName(name: string): ItemKind {
   return ItemKind.Common;
 }
 
-function updateQualityForItem(item: Item): Item {
+export function updateQualityForItem(item: Item): Item {
   let quality = item.quality;
   let sellIn = item.sellIn;
 

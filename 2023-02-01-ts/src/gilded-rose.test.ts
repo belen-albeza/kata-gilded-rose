@@ -1,5 +1,5 @@
 import runGoldenMaster from "./test-data/golden-master";
-import { ItemKind, kindForItemName } from "./gilded-rose";
+import { ItemKind, kindForItemName, Item, GildedRose } from "./gilded-rose";
 
 describe("Gilded Rose golden master tests", () => {
   it("Matches the golden master after 1 day", () => {
@@ -40,5 +40,33 @@ describe("Item kinds", () => {
 
     expect(kind).toBe(ItemKind.Legendary);
     expect(altKind).toBe(ItemKind.Legendary);
+  });
+});
+
+const anyItem = () => {
+  return new Item("A sword", 5, 10);
+};
+
+const anyLegendaryItem = () => {
+  return new Item("Sulfuras", 0, 80);
+};
+
+describe("GildedRose", () => {
+  describe("Sell In values", () => {
+    it("Decreases in each update", () => {
+      const gildedRose = new GildedRose([anyItem()]);
+
+      const result = gildedRose.updateQuality();
+
+      expect(result[0].sellIn).toBe(4);
+    });
+
+    it("Remains constant for legendary items", () => {
+      const gildedRose = new GildedRose([anyLegendaryItem()]);
+
+      const result = gildedRose.updateQuality();
+
+      expect(result[0].sellIn).toBe(anyLegendaryItem().sellIn);
+    });
   });
 });
