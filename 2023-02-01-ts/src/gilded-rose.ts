@@ -50,19 +50,18 @@ function updateQualityForItem(item: Item): Item {
   let quality = item.quality;
   let sellIn = item.sellIn;
 
-  if (
-    item.name != "Aged Brie" &&
-    item.name != "Backstage passes to a TAFKAL80ETC concert"
-  ) {
+  const kind = kindForItemName(item.name);
+
+  if (kind !== ItemKind.AgedBrie && kind !== ItemKind.BackstagePasses) {
     if (quality > 0) {
-      if (item.name != "Sulfuras, Hand of Ragnaros") {
+      if (kind != ItemKind.Legendary) {
         quality = quality - 1;
       }
     }
   } else {
     if (quality < 50) {
       quality = quality + 1;
-      if (item.name == "Backstage passes to a TAFKAL80ETC concert") {
+      if (kind === ItemKind.BackstagePasses) {
         if (sellIn < 11) {
           if (quality < 50) {
             quality = quality + 1;
@@ -77,15 +76,15 @@ function updateQualityForItem(item: Item): Item {
     }
   }
 
-  if (item.name != "Sulfuras, Hand of Ragnaros") {
+  if (kind !== ItemKind.Legendary) {
     sellIn = sellIn - 1;
   }
 
   if (sellIn < 0) {
-    if (item.name != "Aged Brie") {
-      if (item.name != "Backstage passes to a TAFKAL80ETC concert") {
+    if (kind !== ItemKind.AgedBrie) {
+      if (kind !== ItemKind.BackstagePasses) {
         if (quality > 0) {
-          if (item.name != "Sulfuras, Hand of Ragnaros") {
+          if (kind !== ItemKind.Legendary) {
             quality = quality - 1;
           }
         }
