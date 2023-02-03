@@ -41,6 +41,16 @@ describe("Item kinds", () => {
     expect(kind).toBe(ItemKind.Legendary);
     expect(altKind).toBe(ItemKind.Legendary);
   });
+
+  it("Returns `Conjured` for a conjured item", () => {
+    const kind = kindForItemName("Conjured sword");
+    expect(kind).toBe(ItemKind.Conjured);
+  });
+
+  it("Returns `Common` for misc items", () => {
+    const kind = kindForItemName("Lorem ipsum");
+    expect(kind).toBe(ItemKind.Common);
+  });
 });
 
 const anyItem = () => {
@@ -61,6 +71,10 @@ const anyAgedBrie = (sellIn: number, quality: number) => {
 
 const anyBackstagePass = (sellIn: number, quality: number) => {
   return new Item("Backstage pass", sellIn, quality);
+};
+
+const anyConjuredItem = (sellIn: number, quality: number) => {
+  return new Item("Conjured gizmo", sellIn, quality);
 };
 
 describe("GildedRose", () => {
@@ -184,6 +198,32 @@ describe("GildedRose", () => {
       const [item, ..._] = gildedRose.updateQuality();
 
       expect(item.quality).toBe(50);
+    });
+  });
+
+  describe("Conjured item", () => {
+    it("Degrades twice as fast", () => {
+      const gildedRose = new GildedRose([anyConjuredItem(5, 10)]);
+
+      const [item, ..._] = gildedRose.updateQuality();
+
+      expect(item.quality).toBe(8);
+    });
+
+    it("Degrades twice as fast when the sell by date has passed", () => {
+      const gildedRose = new GildedRose([anyConjuredItem(0, 10)]);
+
+      const [item, ..._] = gildedRose.updateQuality();
+
+      expect(item.quality).toBe(6);
+    });
+
+    it("Never gets its quality drop below zero", () => {
+      const gildedRose = new GildedRose([anyConjuredItem(1, 0)]);
+
+      const [item, ..._] = gildedRose.updateQuality();
+
+      expect(item.quality).toBe(0);
     });
   });
 });
