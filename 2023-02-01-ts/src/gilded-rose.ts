@@ -18,56 +18,63 @@ export class GildedRose {
   }
 
   updateQuality() {
-    this.items.forEach(updateQualityForItem);
+    this.items = this.items.map(updateQualityForItem);
     return this.items;
   }
 }
 
-function updateQualityForItem(item: Item) {
+function updateQualityForItem(item: Item): Item {
+  let quality = item.quality;
+  let sellIn = item.sellIn;
+
   if (
     item.name != "Aged Brie" &&
     item.name != "Backstage passes to a TAFKAL80ETC concert"
   ) {
-    if (item.quality > 0) {
+    if (quality > 0) {
       if (item.name != "Sulfuras, Hand of Ragnaros") {
-        item.quality = item.quality - 1;
+        quality = quality - 1;
       }
     }
   } else {
-    if (item.quality < 50) {
-      item.quality = item.quality + 1;
+    if (quality < 50) {
+      quality = quality + 1;
       if (item.name == "Backstage passes to a TAFKAL80ETC concert") {
-        if (item.sellIn < 11) {
-          if (item.quality < 50) {
-            item.quality = item.quality + 1;
+        if (sellIn < 11) {
+          if (quality < 50) {
+            quality = quality + 1;
           }
         }
-        if (item.sellIn < 6) {
-          if (item.quality < 50) {
-            item.quality = item.quality + 1;
+        if (sellIn < 6) {
+          if (quality < 50) {
+            quality = quality + 1;
           }
         }
       }
     }
   }
+
   if (item.name != "Sulfuras, Hand of Ragnaros") {
-    item.sellIn = item.sellIn - 1;
+    sellIn = sellIn - 1;
   }
-  if (item.sellIn < 0) {
+
+  if (sellIn < 0) {
     if (item.name != "Aged Brie") {
       if (item.name != "Backstage passes to a TAFKAL80ETC concert") {
-        if (item.quality > 0) {
+        if (quality > 0) {
           if (item.name != "Sulfuras, Hand of Ragnaros") {
-            item.quality = item.quality - 1;
+            quality = quality - 1;
           }
         }
       } else {
-        item.quality = item.quality - item.quality;
+        quality = quality - quality;
       }
     } else {
-      if (item.quality < 50) {
-        item.quality = item.quality + 1;
+      if (quality < 50) {
+        quality = quality + 1;
       }
     }
   }
+
+  return new Item(item.name, sellIn, quality);
 }
