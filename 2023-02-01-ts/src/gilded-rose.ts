@@ -50,62 +50,16 @@ export function kindForItemName(name: string): ItemKind {
 export function updateQualityForItem(item: Item): Item {
   const kind = kindForItemName(item.name);
 
-  if (kind === ItemKind.Common) {
-    return updateCommonItem(item);
-  } else if (kind === ItemKind.AgedBrie) {
-    return updateAgedBrieItem(item);
-  } else if (kind === ItemKind.Legendary) {
-    return updateLegendaryItem(item);
-  } else if (kind === ItemKind.BackstagePass) {
-    return updateBackstagePassItem(item);
+  switch (kind) {
+    case ItemKind.AgedBrie:
+      return updateAgedBrieItem(item);
+    case ItemKind.Legendary:
+      return updateLegendaryItem(item);
+    case ItemKind.BackstagePass:
+      return updateBackstagePassItem(item);
+    default:
+      return updateCommonItem(item);
   }
-
-  let quality = item.quality;
-  let sellIn = item.sellIn;
-
-  if (kind !== ItemKind.BackstagePass) {
-    if (quality > 0) {
-      if (kind != ItemKind.Legendary) {
-        quality = quality - 1;
-      }
-    }
-  } else {
-    if (quality < 50) {
-      quality = quality + 1;
-      if (kind === ItemKind.BackstagePass) {
-        if (sellIn < 11) {
-          if (quality < 50) {
-            quality = quality + 1;
-          }
-        }
-        if (sellIn < 6) {
-          if (quality < 50) {
-            quality = quality + 1;
-          }
-        }
-      }
-    }
-  }
-
-  sellIn = updateSellInForKind(sellIn, kind);
-
-  if (sellIn < 0) {
-    if (kind !== ItemKind.BackstagePass) {
-      if (quality > 0) {
-        if (kind !== ItemKind.Legendary) {
-          quality = quality - 1;
-        }
-      }
-    } else {
-      quality = quality - quality;
-    }
-  }
-
-  return new Item(item.name, sellIn, quality);
-}
-
-function updateSellInForKind(currentSellIn: number, kind: ItemKind): number {
-  return kind !== ItemKind.Legendary ? currentSellIn - 1 : currentSellIn;
 }
 
 function updateCommonItem(item: Item): Item {
