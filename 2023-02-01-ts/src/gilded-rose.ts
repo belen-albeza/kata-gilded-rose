@@ -23,6 +23,29 @@ export class GildedRose {
   }
 }
 
+export enum ItemKind {
+  AgedBrie = "Aged brie",
+  BackstagePasses = "Backstage passes",
+  Legendary = "Legendary",
+  Common = "Common",
+}
+
+export function kindForItemName(name: string): ItemKind {
+  if (/^aged brie$/i.test(name)) {
+    return ItemKind.AgedBrie;
+  }
+
+  if (/^backstage passes/i.test(name)) {
+    return ItemKind.BackstagePasses;
+  }
+
+  if (/^sulfuras([,\s]?.+|$)/i.test(name)) {
+    return ItemKind.Legendary;
+  }
+
+  return ItemKind.Common;
+}
+
 function updateQualityForItem(item: Item): Item {
   let quality = item.quality;
   let sellIn = item.sellIn;
