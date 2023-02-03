@@ -26,7 +26,7 @@ export class GildedRose {
 
 export enum ItemKind {
   AgedBrie = "Aged brie",
-  BackstagePasses = "Backstage passes",
+  BackstagePass = "Backstage passes",
   Legendary = "Legendary",
   Common = "Common",
 }
@@ -36,8 +36,8 @@ export function kindForItemName(name: string): ItemKind {
     return ItemKind.AgedBrie;
   }
 
-  if (/^backstage passes/i.test(name)) {
-    return ItemKind.BackstagePasses;
+  if (/^backstage pass(es)?/i.test(name)) {
+    return ItemKind.BackstagePass;
   }
 
   if (/^sulfuras([,\s]?.+|$)/i.test(name)) {
@@ -53,13 +53,17 @@ export function updateQualityForItem(item: Item): Item {
   if (kind === ItemKind.Common) {
     return updateCommonItem(item);
   } else if (kind === ItemKind.AgedBrie) {
-    return updateAgedBrie(item);
+    return updateAgedBrieItem(item);
+  } else if (kind === ItemKind.Legendary) {
+    return updateLegendaryItem(item);
+  } else if (kind === ItemKind.BackstagePass) {
+    return updateBackstagePassItem(item);
   }
 
   let quality = item.quality;
   let sellIn = item.sellIn;
 
-  if (kind !== ItemKind.BackstagePasses) {
+  if (kind !== ItemKind.BackstagePass) {
     if (quality > 0) {
       if (kind != ItemKind.Legendary) {
         quality = quality - 1;
@@ -68,7 +72,7 @@ export function updateQualityForItem(item: Item): Item {
   } else {
     if (quality < 50) {
       quality = quality + 1;
-      if (kind === ItemKind.BackstagePasses) {
+      if (kind === ItemKind.BackstagePass) {
         if (sellIn < 11) {
           if (quality < 50) {
             quality = quality + 1;
@@ -86,7 +90,7 @@ export function updateQualityForItem(item: Item): Item {
   sellIn = updateSellInForKind(sellIn, kind);
 
   if (sellIn < 0) {
-    if (kind !== ItemKind.BackstagePasses) {
+    if (kind !== ItemKind.BackstagePass) {
       if (quality > 0) {
         if (kind !== ItemKind.Legendary) {
           quality = quality - 1;
@@ -113,10 +117,37 @@ function updateCommonItem(item: Item): Item {
   return new Item(item.name, sellIn, quality);
 }
 
-function updateAgedBrie(item: Item): Item {
+function updateAgedBrieItem(item: Item): Item {
   const sellIn = item.sellIn - 1;
 
   const qualityDelta = sellIn >= 0 ? 1 : 2;
+  const quality = Math.min(
+    Math.max(0, item.quality + qualityDelta),
+    GildedRose.MAX_QUALITY
+  );
+
+  return new Item(item.name, sellIn, quality);
+}
+
+function updateLegendaryItem(item: Item): Item {
+  return new Item(item.name, item.sellIn, item.quality);
+}
+
+function updateBackstagePassItem(item: Item): Item {
+  const qualityDelta = ((sellIn) => {
+    switch (true) {
+      case sellIn > 10:
+        return 1;
+      case sellIn > 5:
+        return 2;
+      case sellIn > 0:
+        return 3;
+      default:
+        return -item.quality;
+    }
+  })(item.sellIn);
+
+  const sellIn = item.sellIn - 1;
   const quality = Math.min(
     Math.max(0, item.quality + qualityDelta),
     GildedRose.MAX_QUALITY

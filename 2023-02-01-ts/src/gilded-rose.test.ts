@@ -29,9 +29,9 @@ describe("Item kinds", () => {
     expect(kind).toBe(ItemKind.AgedBrie);
   });
 
-  it("Returns `BackstagePasses` for concert passes", () => {
+  it("Returns `BackstagePass` for concert passes", () => {
     const kind = kindForItemName("Backstage passes to a TAFKAL80ETC concert");
-    expect(kind).toBe(ItemKind.BackstagePasses);
+    expect(kind).toBe(ItemKind.BackstagePass);
   });
 
   it("Returns `Legendary` for Sulfuras", () => {
@@ -57,6 +57,10 @@ const anyCommonItem = (sellIn: number, quality: number) => {
 
 const anyAgedBrie = (sellIn: number, quality: number) => {
   return new Item("Aged Brie", sellIn, quality);
+};
+
+const anyBackstagePass = (sellIn: number, quality: number) => {
+  return new Item("Backstage pass", sellIn, quality);
 };
 
 describe("GildedRose", () => {
@@ -104,6 +108,17 @@ describe("GildedRose", () => {
     });
   });
 
+  describe("Legendary item", () => {
+    it("Never has to be sold or decreases in quality", () => {
+      const gildedRose = new GildedRose([anyLegendaryItem()]);
+
+      const [item, ..._] = gildedRose.updateQuality();
+
+      expect(item.quality).toBe(anyLegendaryItem().quality);
+      expect(item.sellIn).toBe(anyLegendaryItem().sellIn);
+    });
+  });
+
   describe("Aged Brie", () => {
     it("Increases in quality the older it gets", () => {
       const gildedRose = new GildedRose([anyAgedBrie(1, 10)]);
@@ -123,6 +138,48 @@ describe("GildedRose", () => {
 
     it("Never gets updated above 50", () => {
       const gildedRose = new GildedRose([anyAgedBrie(1, 50)]);
+
+      const [item, ..._] = gildedRose.updateQuality();
+
+      expect(item.quality).toBe(50);
+    });
+  });
+
+  describe("Backstage pass", () => {
+    it("Increases in quality by 1 when the concert approaches and 11+ days remain", () => {
+      const gildedRose = new GildedRose([anyBackstagePass(11, 20)]);
+
+      const [item, ..._] = gildedRose.updateQuality();
+
+      expect(item.quality).toBe(21);
+    });
+
+    it("Increases in quality by 2 when 10 or less days remain", () => {
+      const gildedRose = new GildedRose([anyBackstagePass(10, 20)]);
+
+      const [item, ..._] = gildedRose.updateQuality();
+
+      expect(item.quality).toBe(22);
+    });
+
+    it("Increases in quality by 3 when 5 or less days remain", () => {
+      const gildedRose = new GildedRose([anyBackstagePass(5, 20)]);
+
+      const [item, ..._] = gildedRose.updateQuality();
+
+      expect(item.quality).toBe(23);
+    });
+
+    it("Drops to zero quality after the concert", () => {
+      const gildedRose = new GildedRose([anyBackstagePass(0, 20)]);
+
+      const [item, ..._] = gildedRose.updateQuality();
+
+      expect(item.quality).toBe(0);
+    });
+
+    it("Never gets updated above 50 quality", () => {
+      const gildedRose = new GildedRose([anyBackstagePass(5, 49)]);
 
       const [item, ..._] = gildedRose.updateQuality();
 
