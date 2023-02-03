@@ -76,9 +76,7 @@ function updateQualityForItem(item: Item): Item {
     }
   }
 
-  if (kind !== ItemKind.Legendary) {
-    sellIn = sellIn - 1;
-  }
+  sellIn = updateSellInForKind(sellIn, kind);
 
   if (sellIn < 0) {
     if (kind !== ItemKind.AgedBrie) {
@@ -99,4 +97,8 @@ function updateQualityForItem(item: Item): Item {
   }
 
   return new Item(item.name, sellIn, quality);
+}
+
+function updateSellInForKind(currentSellIn: number, kind: ItemKind): number {
+  return kind !== ItemKind.Legendary ? currentSellIn - 1 : currentSellIn;
 }
