@@ -1,6 +1,7 @@
 use lazy_static::lazy_static;
 use regex::Regex;
 use serde::Serialize;
+use std::cmp::max;
 use std::fmt::{self, Display};
 
 #[derive(Debug, PartialEq, Clone, Serialize)]
@@ -36,10 +37,15 @@ impl GildedRose {
     }
 
     pub fn update_quality(&mut self) {
-        self.items = self.items.iter().map(|x| self.update_item(x)).collect()
+        self.items = self.items.iter().map(|x| Self::update_item(x)).collect()
     }
 
-    fn update_item(&self, original_item: &Item) -> Item {
+    fn update_item(original_item: &Item) -> Item {
+        match ItemKind::from(original_item.name.as_str()) {
+            ItemKind::Common => return Self::update_common_item(original_item),
+            _ => {}
+        }
+
         let mut item = original_item.clone();
 
         if item.name != "Aged Brie" && item.name != "Backstage passes to a TAFKAL80ETC concert" {
@@ -91,6 +97,16 @@ impl GildedRose {
         }
 
         item
+    }
+
+    fn update_common_item(item: &Item) -> Item {
+        let sell_in = item.sell_in - 1;
+        let mut quality = item.quality - 1;
+        if sell_in < 0 {
+            quality -= 1
+        }
+
+        Item::new(item.name.to_owned(), sell_in, max(0, quality))
     }
 }
 
