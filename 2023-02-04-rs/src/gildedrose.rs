@@ -40,13 +40,11 @@ impl GildedRose {
         self.items = self.items.iter().map(|x| Self::update_item(x)).collect()
     }
 
-    fn update_item(original_item: &Item) -> Item {
-        match ItemKind::from(original_item.name.as_str()) {
-            ItemKind::Common => return CommonUpdater::update(original_item),
-            ItemKind::Legendary => return LegendaryItemUpdater::update(original_item),
-            ItemKind::Aged => return AgedUpdater::update(original_item),
-            ItemKind::BackstagePass => return BackstagePassUpdater::update(original_item),
-        }
+    fn update_item(item: &Item) -> Item {
+        let kind = ItemKind::from(item.name.as_str());
+        let updater = Into::<Box<dyn ItemUpdater>>::into(kind);
+
+        updater.update(item)
     }
 }
 
@@ -78,21 +76,34 @@ impl From<&str> for ItemKind {
     }
 }
 
-trait ItemUpdater {
-    const MAX_QUALITY: i32 = 50;
+impl Into<Box<dyn ItemUpdater>> for ItemKind {
+    fn into(self) -> Box<dyn ItemUpdater> {
+        match self {
+            Self::Common => Box::new(CommonUpdater {}),
+            Self::Legendary => Box::new(LegendaryUpdater {}),
+            Self::BackstagePass => Box::new(BackstagePassUpdater {}),
+            Self::Aged => Box::new(AgedUpdater {}),
+        }
+    }
+}
 
-    fn update(item: &Item) -> Item {
+trait ItemUpdater {
+    fn max_quality(&self) -> i32 {
+        50
+    }
+
+    fn update(&self, item: &Item) -> Item {
         item.clone()
     }
 }
 
-struct LegendaryItemUpdater {}
-impl ItemUpdater for LegendaryItemUpdater {}
+struct LegendaryUpdater {}
+impl ItemUpdater for LegendaryUpdater {}
 
 struct CommonUpdater {}
 
 impl ItemUpdater for CommonUpdater {
-    fn update(item: &Item) -> Item {
+    fn update(&self, item: &Item) -> Item {
         let sell_in = item.sell_in - 1;
         let mut quality = item.quality - 1;
         if sell_in < 0 {
@@ -106,7 +117,7 @@ impl ItemUpdater for CommonUpdater {
 struct AgedUpdater {}
 
 impl ItemUpdater for AgedUpdater {
-    fn update(item: &Item) -> Item {
+    fn update(&self, item: &Item) -> Item {
         let sell_in = item.sell_in - 1;
         let mut quality = item.quality + 1;
         if sell_in < 0 {
@@ -116,7 +127,7 @@ impl ItemUpdater for AgedUpdater {
         Item::new(
             item.name.to_owned(),
             sell_in,
-            min(quality, Self::MAX_QUALITY),
+            min(quality, self.max_quality()),
         )
     }
 }
@@ -124,7 +135,7 @@ impl ItemUpdater for AgedUpdater {
 struct BackstagePassUpdater {}
 
 impl ItemUpdater for BackstagePassUpdater {
-    fn update(item: &Item) -> Item {
+    fn update(&self, item: &Item) -> Item {
         let quality = item.quality
             + match item.sell_in {
                 i32::MIN..=0 => -item.quality,
@@ -138,7 +149,7 @@ impl ItemUpdater for BackstagePassUpdater {
         Item::new(
             item.name.to_owned(),
             sell_in,
-            min(quality, Self::MAX_QUALITY),
+            min(quality, self.max_quality()),
         )
     }
 }
