@@ -41,3 +41,10 @@ Just for clarification, an item can never have its `quality` increase above `50`
 - Added an enum to identify items types (`AgedBrie`, `BackstagePass`, `Common`, etc.).
 - Processed each item kind update separately, with functions.
 - Items are treated as immutable (although the original `Item` class allows for modifications).
+
+### [2023-02-04 (Rust)](./2023-02-04-rs/README.md)
+
+- Used `Insta` crate for **approval testing**.
+- Added an enum to identify item types. Used this enum as a factory to create instances of types that implement an `ItemUpdater` trait.
+- We have specific types that implement `ItemUpdater`, one for each item kind. This way we decouple the `GildedRose` type from knowing which items types we have available and how to process them.
+
