@@ -1,0 +1,20 @@
+[package]
+name = "gildedrose-kata"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+clap = { version = "4.1.4", features = ["derive"] }
+serde = { version = "1.0.152", features = ["derive"] }
+
+[dev-dependencies]
+insta = { version = "1.26.0", features = ["yaml"] }
+
+# Setting insta and similar to optimized compiling
+[profile.dev.package.insta]
+opt-level = 3
+
+[profile.dev.package.similar]
+opt-level = 3
