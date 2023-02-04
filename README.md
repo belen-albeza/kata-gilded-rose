@@ -39,4 +39,5 @@ Just for clarification, an item can never have its `quality` increase above `50`
 
 - Used Jest's `toMatchSnapshot()` for **approval testing**.
 - Added an enum to identify items types (`AgedBrie`, `BackstagePass`, `Common`, etc.).
-- Processed each item kind update separately.
+- Processed each item kind update separately, with functions.
+- Items are treated as immutable (although the original `Item` class allows for modifications).
