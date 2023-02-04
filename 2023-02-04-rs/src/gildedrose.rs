@@ -32,8 +32,6 @@ pub struct GildedRose {
 }
 
 impl GildedRose {
-    const MAX_QUALITY: i32 = 50;
-
     pub fn new(items: Vec<Item>) -> GildedRose {
         GildedRose { items }
     }
@@ -44,57 +42,11 @@ impl GildedRose {
 
     fn update_item(original_item: &Item) -> Item {
         match ItemKind::from(original_item.name.as_str()) {
-            ItemKind::Common => return Self::update_common_item(original_item),
-            ItemKind::Legendary => return Self::update_legendary_item(original_item),
-            ItemKind::Aged => return Self::update_aged_item(original_item),
-            ItemKind::BackstagePass => return Self::update_backstage_pass_item(original_item),
+            ItemKind::Common => return CommonUpdater::update(original_item),
+            ItemKind::Legendary => return LegendaryItemUpdater::update(original_item),
+            ItemKind::Aged => return AgedUpdater::update(original_item),
+            ItemKind::BackstagePass => return BackstagePassUpdater::update(original_item),
         }
-    }
-
-    fn update_common_item(item: &Item) -> Item {
-        let sell_in = item.sell_in - 1;
-        let mut quality = item.quality - 1;
-        if sell_in < 0 {
-            quality -= 1
-        }
-
-        Item::new(item.name.to_owned(), sell_in, max(0, quality))
-    }
-
-    fn update_legendary_item(item: &Item) -> Item {
-        item.clone()
-    }
-
-    fn update_aged_item(item: &Item) -> Item {
-        let sell_in = item.sell_in - 1;
-        let mut quality = item.quality + 1;
-        if sell_in < 0 {
-            quality += 1;
-        }
-
-        Item::new(
-            item.name.to_owned(),
-            sell_in,
-            min(quality, Self::MAX_QUALITY),
-        )
-    }
-
-    fn update_backstage_pass_item(item: &Item) -> Item {
-        let quality = item.quality
-            + match item.sell_in {
-                i32::MIN..=0 => -item.quality,
-                1..=5 => 3,
-                6..=10 => 2,
-                11..=i32::MAX => 1,
-            };
-
-        let sell_in = item.sell_in - 1;
-
-        Item::new(
-            item.name.to_owned(),
-            sell_in,
-            min(quality, Self::MAX_QUALITY),
-        )
     }
 }
 
@@ -123,6 +75,71 @@ impl From<&str> for ItemKind {
         } else {
             ItemKind::Common
         }
+    }
+}
+
+trait ItemUpdater {
+    const MAX_QUALITY: i32 = 50;
+
+    fn update(item: &Item) -> Item {
+        item.clone()
+    }
+}
+
+struct LegendaryItemUpdater {}
+impl ItemUpdater for LegendaryItemUpdater {}
+
+struct CommonUpdater {}
+
+impl ItemUpdater for CommonUpdater {
+    fn update(item: &Item) -> Item {
+        let sell_in = item.sell_in - 1;
+        let mut quality = item.quality - 1;
+        if sell_in < 0 {
+            quality -= 1
+        }
+
+        Item::new(item.name.to_owned(), sell_in, max(0, quality))
+    }
+}
+
+struct AgedUpdater {}
+
+impl ItemUpdater for AgedUpdater {
+    fn update(item: &Item) -> Item {
+        let sell_in = item.sell_in - 1;
+        let mut quality = item.quality + 1;
+        if sell_in < 0 {
+            quality += 1;
+        }
+
+        Item::new(
+            item.name.to_owned(),
+            sell_in,
+            min(quality, Self::MAX_QUALITY),
+        )
+    }
+}
+
+struct BackstagePassUpdater {}
+
+impl ItemUpdater for BackstagePassUpdater {
+    fn update(item: &Item) -> Item {
+        let quality = item.quality
+            + match item.sell_in {
+                i32::MIN..=0 => -item.quality,
+                1..=5 => 3,
+                6..=10 => 2,
+                11..=i32::MAX => 1,
+            };
+
+        let sell_in = item.sell_in - 1;
+
+        Item::new(
+            item.name.to_owned(),
+            sell_in,
+            min(quality, Self::MAX_QUALITY),
+        )
     }
 }
 
