@@ -125,10 +125,7 @@ struct CommonUpdater {}
 impl ItemUpdater for CommonUpdater {
     fn update(&self, item: &Item) -> Item {
         let sell_in = item.sell_in - 1;
-        let mut quality = item.quality - 1;
-        if sell_in < 0 {
-            quality -= 1
-        }
+        let quality = item.quality + if sell_in >= 0 { -1 } else { -2 };
 
         Item::new(item.name.to_owned(), sell_in, max(0, quality))
     }
@@ -144,10 +141,7 @@ struct AgedUpdater {}
 impl ItemUpdater for AgedUpdater {
     fn update(&self, item: &Item) -> Item {
         let sell_in = item.sell_in - 1;
-        let mut quality = item.quality + 1;
-        if sell_in < 0 {
-            quality += 1;
-        }
+        let quality = item.quality + if sell_in >= 0 { 1 } else { 2 };
 
         Item::new(
             item.name.to_owned(),
@@ -194,11 +188,7 @@ struct ConjuredUpdater {}
 impl ItemUpdater for ConjuredUpdater {
     fn update(&self, item: &Item) -> Item {
         let sell_in = item.sell_in - 1;
-
-        let mut quality = item.quality - 2;
-        if sell_in < 0 {
-            quality -= 2;
-        }
+        let quality = item.quality + if sell_in >= 0 { -2 } else { -4 };
 
         Item::new(item.name.to_owned(), sell_in, max(0, quality))
     }
