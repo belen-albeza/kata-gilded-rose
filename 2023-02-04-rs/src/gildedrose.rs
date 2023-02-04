@@ -48,12 +48,13 @@ impl GildedRose {
     }
 }
 
-#[derive(Debug, PartialEq, Clone, Copy)]
+#[derive(Debug, PartialEq)]
 enum ItemKind {
     Common,
     Aged,
     BackstagePass,
     Legendary,
+    Conjured,
 }
 
 impl From<&str> for ItemKind {
@@ -62,6 +63,7 @@ impl From<&str> for ItemKind {
             static ref RE_AGED: Regex = Regex::new(r"^Aged(\s.+)?").unwrap();
             static ref RE_LEGENDARY: Regex = Regex::new(r"^Sulfuras([,\s].+)?").unwrap();
             static ref RE_PASS: Regex = Regex::new(r"^Backstage pass(es)?(\s.+)?").unwrap();
+            static ref RE_CONJURED: Regex = Regex::new(r"^Conjured .+").unwrap();
         }
 
         if RE_AGED.is_match(raw) {
@@ -70,6 +72,8 @@ impl From<&str> for ItemKind {
             ItemKind::Legendary
         } else if RE_PASS.is_match(raw) {
             ItemKind::BackstagePass
+        } else if RE_CONJURED.is_match(raw) {
+            ItemKind::Conjured
         } else {
             ItemKind::Common
         }
@@ -83,11 +87,12 @@ impl Into<Box<dyn ItemUpdater>> for ItemKind {
             Self::Legendary => Box::new(LegendaryUpdater {}),
             Self::BackstagePass => Box::new(BackstagePassUpdater {}),
             Self::Aged => Box::new(AgedUpdater {}),
+            Self::Conjured => Box::new(ConjuredUpdater {}),
         }
     }
 }
 
-trait ItemUpdater {
+trait ItemUpdater: core::fmt::Debug {
     fn max_quality(&self) -> i32 {
         50
     }
@@ -95,11 +100,26 @@ trait ItemUpdater {
     fn update(&self, item: &Item) -> Item {
         item.clone()
     }
+
+    fn kind(&self) -> ItemKind;
 }
 
-struct LegendaryUpdater {}
-impl ItemUpdater for LegendaryUpdater {}
+impl PartialEq for dyn ItemUpdater {
+    fn eq(&self, other: &Self) -> bool {
+        self.kind() == other.kind()
+    }
+}
 
+#[derive(Debug, PartialEq)]
+struct LegendaryUpdater {}
+
+impl ItemUpdater for LegendaryUpdater {
+    fn kind(&self) -> ItemKind {
+        ItemKind::Legendary
+    }
+}
+
+#[derive(Debug, PartialEq, Copy, Clone)]
 struct CommonUpdater {}
 
 impl ItemUpdater for CommonUpdater {
@@ -112,8 +132,13 @@ impl ItemUpdater for CommonUpdater {
 
         Item::new(item.name.to_owned(), sell_in, max(0, quality))
     }
+
+    fn kind(&self) -> ItemKind {
+        ItemKind::Common
+    }
 }
 
+#[derive(Debug, PartialEq)]
 struct AgedUpdater {}
 
 impl ItemUpdater for AgedUpdater {
@@ -130,8 +155,13 @@ impl ItemUpdater for AgedUpdater {
             min(quality, self.max_quality()),
         )
     }
+
+    fn kind(&self) -> ItemKind {
+        ItemKind::Aged
+    }
 }
 
+#[derive(Debug, PartialEq)]
 struct BackstagePassUpdater {}
 
 impl ItemUpdater for BackstagePassUpdater {
@@ -152,6 +182,30 @@ impl ItemUpdater for BackstagePassUpdater {
             min(quality, self.max_quality()),
         )
     }
+
+    fn kind(&self) -> ItemKind {
+        ItemKind::BackstagePass
+    }
+}
+
+#[derive(Debug, PartialEq)]
+struct ConjuredUpdater {}
+
+impl ItemUpdater for ConjuredUpdater {
+    fn update(&self, item: &Item) -> Item {
+        let sell_in = item.sell_in - 1;
+
+        let mut quality = item.quality - 2;
+        if sell_in < 0 {
+            quality -= 2;
+        }
+
+        Item::new(item.name.to_owned(), sell_in, max(0, quality))
+    }
+
+    fn kind(&self) -> ItemKind {
+        ItemKind::Conjured
+    }
 }
 
 #[cfg(test)]
@@ -171,5 +225,61 @@ mod tests {
             ItemKind::BackstagePass
         );
         assert_eq!(ItemKind::from("Aged Brie"), ItemKind::Aged);
+    }
+
+    #[test]
+    fn test_item_updater_for_kind() {
+        let common_updater = Into::<Box<dyn ItemUpdater>>::into(ItemKind::Common);
+        assert_eq!(common_updater.kind(), ItemKind::Common);
+        let legendary_updater = Into::<Box<dyn ItemUpdater>>::into(ItemKind::Legendary);
+        assert_eq!(legendary_updater.kind(), ItemKind::Legendary);
+        let aged_updater = Into::<Box<dyn ItemUpdater>>::into(ItemKind::Aged);
+        assert_eq!(aged_updater.kind(), ItemKind::Aged);
+        let pass_updater = Into::<Box<dyn ItemUpdater>>::into(ItemKind::BackstagePass);
+        assert_eq!(pass_updater.kind(), ItemKind::BackstagePass);
+    }
+
+    #[test]
+    fn test_conjured_items_decreases_their_sell_by_date() {
+        let items = vec![Item::new("Conjured sword", 5, 10)];
+        let mut gr = GildedRose::new(items);
+
+        gr.update_quality();
+        let item = &gr.items[0];
+
+        assert_eq!(item.sell_in, 4);
+    }
+
+    #[test]
+    fn test_conjured_items_decreases_quality_twice_as_fast() {
+        let items = vec![Item::new("Conjured sword", 1, 10)];
+        let mut gr = GildedRose::new(items);
+
+        gr.update_quality();
+        let item = &gr.items[0];
+
+        assert_eq!(item.quality, 8);
+    }
+
+    #[test]
+    fn test_conjured_items_decreases_quality_twice_as_fast_when_sell_by_date_has_expired() {
+        let items = vec![Item::new("Conjured sword", 0, 10)];
+        let mut gr = GildedRose::new(items);
+
+        gr.update_quality();
+        let item = &gr.items[0];
+
+        assert_eq!(item.quality, 6);
+    }
+
+    #[test]
+    fn test_conjured_items_dont_drop_quality_below_zero() {
+        let items = vec![Item::new("Conjured sword", -1, 0)];
+        let mut gr = GildedRose::new(items);
+
+        gr.update_quality();
+        let item = &gr.items[0];
+
+        assert_eq!(item.quality, 0);
     }
 }

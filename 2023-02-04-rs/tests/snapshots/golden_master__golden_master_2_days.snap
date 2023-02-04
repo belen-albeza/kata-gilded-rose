@@ -28,5 +28,5 @@ expression: result
   quality: 50
 - name: Conjured Mana Cake
   sell_in: 1
-  quality: 4
+  quality: 2
 
