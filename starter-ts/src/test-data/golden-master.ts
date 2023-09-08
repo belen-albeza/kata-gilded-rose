@@ -18,7 +18,7 @@ export default function runGildedRose(days: number): string {
   let output = "";
 
   for (let i = 0; i < days; i++) {
-    output += `-------- day ${i} --------\n`;
+    output += `-------- day ${i + 1} --------\n`;
     output += `name, sellIn, quality\n`;
     gildedRose.items.forEach((element) => {
       output += `${element.name} ${element.sellIn} ${element.quality}\n`;
