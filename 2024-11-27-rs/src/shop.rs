@@ -1,5 +1,12 @@
 use serde::Serialize;
-use std::fmt::{self, Display};
+use std::{
+    cmp::{max, min},
+    fmt::{self, Display},
+};
+
+mod core;
+
+use core::Kind;
 
 #[derive(Serialize, Debug, PartialEq, Clone)]
 pub struct Item {
@@ -44,30 +51,21 @@ impl GildedRose {
     }
 
     fn update_item(item: &mut Item) {
-        if item.name != "Aged Brie" && item.name != "Backstage passes to a TAFKAL80ETC concert" {
-            if item.quality > 0 {
-                if item.name != "Sulfuras, Hand of Ragnaros" {
-                    item.quality = item.quality - 1;
-                }
-            }
-        } else {
-            if item.quality < 50 {
-                item.quality = item.quality + 1;
+        let kind = Kind::from(item.name.as_str());
 
-                if item.name == "Backstage passes to a TAFKAL80ETC concert" {
-                    if item.sell_in < 11 {
-                        if item.quality < 50 {
-                            item.quality = item.quality + 1;
-                        }
-                    }
+        let quality_delta = match kind {
+            Kind::BackstagePass => Some(match item.sell_in {
+                x if x < 11 => 2,
+                x if x < 6 => 3,
+                _ => 1,
+            }),
+            Kind::Sulfuras => None,
+            Kind::Aged => Some(1),
+            _ => Some(-1),
+        };
 
-                    if item.sell_in < 6 {
-                        if item.quality < 50 {
-                            item.quality = item.quality + 1;
-                        }
-                    }
-                }
-            }
+        if let Some(delta) = quality_delta {
+            item.quality = min(max(0, item.quality + delta), 50);
         }
 
         if item.name != "Sulfuras, Hand of Ragnaros" {
