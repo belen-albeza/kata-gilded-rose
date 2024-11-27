@@ -46,19 +46,21 @@ impl GildedRose {
 
     pub fn update_quality(&mut self) {
         for item in self.items.iter_mut() {
-            Self::update_item(item)
+            let (quality, sell_in) = Self::updated_item_values(item);
+            item.quality = quality;
+            item.sell_in = sell_in;
         }
     }
 
-    fn update_item(item: &mut Item) {
+    fn updated_item_values(item: &Item) -> (i32, i32) {
         let kind = Kind::from(item.name.as_str());
 
-        item.sell_in = match kind {
+        let sell_in = match kind {
             Kind::Sulfuras => item.sell_in,
             _ => item.sell_in - 1,
         };
 
-        let quality_delta = match (kind, item.sell_in) {
+        let quality_delta = match (kind, sell_in) {
             (Kind::BackstagePass, sell) if sell < 0 => Some(-item.quality),
             (Kind::BackstagePass, sell) if sell < 5 => Some(3),
             (Kind::BackstagePass, sell) if sell < 10 => Some(2),
@@ -66,17 +68,41 @@ impl GildedRose {
             (Kind::Sulfuras, _) => None,
             (Kind::Aged, sell) if sell < 0 => Some(2),
             (Kind::Aged, _) => Some(1),
+            (Kind::Conjured, sell) if sell < 0 => Some(-4),
+            (Kind::Conjured, _) => Some(-2),
             (_, sell) if sell < 0 => Some(-2),
             _ => Some(-1),
         };
 
-        if let Some(delta) = quality_delta {
-            item.quality = min(max(0, item.quality + delta), 50);
-        }
+        let quality = if let Some(delta) = quality_delta {
+            min(max(0, item.quality + delta), 50)
+        } else {
+            item.quality
+        };
+
+        (quality, sell_in)
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn conjured_items_degrade_twice_as_fast() {
+        let item = Item::new("Conjured Foo", 1, 10);
+        let (quality, sell_in) = GildedRose::updated_item_values(&item);
+
+        assert_eq!(quality, 8);
+        assert_eq!(sell_in, 0);
+    }
+
+    #[test]
+    fn expired_conjured_items_degrade_twice_as_fast() {
+        let item = Item::new("Conjured Foo", 0, 10);
+        let (quality, sell_in) = GildedRose::updated_item_values(&item);
+
+        assert_eq!(quality, 6);
+        assert_eq!(sell_in, -1);
+    }
 }
