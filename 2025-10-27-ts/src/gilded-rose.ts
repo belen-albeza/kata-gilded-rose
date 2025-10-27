@@ -92,13 +92,7 @@ export class GildedRose {
   }
 
   updateQuality(): Item[] {
-    for (let i = 0; i < this.#items.length; i++) {
-      const item = this.items[i];
-      if (item !== undefined) {
-        this.#items[i] = GildedRose.#updateItem(item);
-      }
-    }
-
+    this.#items = this.#items.map(GildedRose.#updateItem);
     return this.#items;
   }
 
