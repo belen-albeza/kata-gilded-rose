@@ -10,29 +10,46 @@ export class Item {
   }
 }
 
+type Quirk = "aged" | "passes" | "sulfuras";
+
 class GildedItem {
   readonly #rawItem: Item;
+  readonly quirk: undefined | Quirk;
 
   constructor(rawItem: Item) {
     this.#rawItem = rawItem;
+    this.quirk = GildedItem.#quirkFromName(rawItem.name.toLowerCase());
+  }
+
+  static #quirkFromName(name: string): Quirk | undefined {
+    if (name.startsWith("aged")) {
+      return "aged";
+    }
+
+    if (name === "sulfuras, hand of ragnaros") {
+      return "sulfuras";
+    }
+
+    if (name.startsWith("backstage passes")) {
+      return "passes";
+    }
+
+    return undefined;
   }
 
   updateQuality(): number {
     let quality = this.#rawItem.quality;
 
-    if (
-      this.#rawItem.name != "Aged Brie" &&
-      this.#rawItem.name != "Backstage passes to a TAFKAL80ETC concert"
-    ) {
+    if (this.quirk != "aged" && this.quirk != "passes") {
       if (this.#rawItem.quality > 0) {
-        if (this.#rawItem.name != "Sulfuras, Hand of Ragnaros") {
+        if (this.quirk != "sulfuras") {
           quality = this.#rawItem.quality - 1;
         }
       }
     } else {
       if (this.#rawItem.quality < 50) {
         quality = this.#rawItem.quality + 1;
-        if (this.#rawItem.name == "Backstage passes to a TAFKAL80ETC concert") {
+        if (this.quirk == "passes") {
           if (this.#rawItem.sellIn < 11) {
             if (quality < 50) {
               quality += 1;
@@ -54,15 +71,15 @@ class GildedItem {
     let sellIn = this.#rawItem.sellIn;
     let quality = this.#rawItem.quality;
 
-    if (this.#rawItem.name != "Sulfuras, Hand of Ragnaros") {
+    if (this.quirk != "sulfuras") {
       sellIn = sellIn - 1;
     }
 
     if (sellIn < 0) {
-      if (this.#rawItem.name != "Aged Brie") {
-        if (this.#rawItem.name != "Backstage passes to a TAFKAL80ETC concert") {
+      if (this.quirk != "aged") {
+        if (this.quirk != "passes") {
           if (this.#rawItem.quality > 0) {
-            if (this.#rawItem.name != "Sulfuras, Hand of Ragnaros") {
+            if (this.quirk != "sulfuras") {
               quality = quality - 1;
             }
           }
