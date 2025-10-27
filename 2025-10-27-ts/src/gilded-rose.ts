@@ -12,16 +12,16 @@ export class Item {
 
 type Quirk = "aged" | "passes" | "sulfuras";
 
-class GildedItem {
+class ShopItem {
   readonly #rawItem: Item;
   readonly quirk: undefined | Quirk;
 
   constructor(rawItem: Item) {
     this.#rawItem = rawItem;
-    this.quirk = GildedItem.#quirkFromName(rawItem.name.toLowerCase());
+    this.quirk = ShopItem.quirkFromName(rawItem.name.toLowerCase());
   }
 
-  static #quirkFromName(name: string): Quirk | undefined {
+  static quirkFromName(name: string): Quirk | undefined {
     if (name.startsWith("aged")) {
       return "aged";
     }
@@ -78,7 +78,7 @@ class GildedItem {
     if (sellIn < 0) {
       if (this.quirk != "aged") {
         if (this.quirk != "passes") {
-          if (this.#rawItem.quality > 0) {
+          if (quality > 0) {
             if (this.quirk != "sulfuras") {
               quality = quality - 1;
             }
@@ -94,6 +94,45 @@ class GildedItem {
     }
 
     return { quality, sellIn };
+  }
+}
+
+abstract class GildedItem {
+  protected readonly sellIn: number;
+  protected readonly quality: number;
+
+  constructor(sellIn: number, quality: number) {
+    this.quality = quality;
+    this.sellIn = sellIn;
+  }
+
+  abstract update(): { quality: number; sellIn: number };
+}
+
+class CommonItem extends GildedItem {
+  update(): { quality: number; sellIn: number } {
+    let sellIn = this.sellIn - 1;
+    let quality = sellIn < 0 ? this.quality - 2 : this.quality - 1;
+    quality = Math.min(Math.max(0, quality), 50);
+
+    return { quality, sellIn };
+  }
+}
+
+class GildedItemFactory {
+  static newGildedItem(item: Item): GildedItem | undefined {
+    let quirk = ShopItem.quirkFromName(item.name.toLowerCase());
+
+    switch (quirk) {
+      case "aged":
+        return undefined; // TODO
+      case "sulfuras":
+        return undefined; // TODO
+      case "passes":
+        return undefined; // TODO
+      default:
+        return new CommonItem(item.sellIn, item.quality);
+    }
   }
 }
 
@@ -114,8 +153,14 @@ export class GildedRose {
   }
 
   static #updateItem(item: Item): Item {
-    item.quality = new GildedItem(item).updateQuality();
-    const { quality, sellIn } = new GildedItem(item).updateSellIn();
+    let gildedItem = GildedItemFactory.newGildedItem(item);
+    if (gildedItem) {
+      const { quality, sellIn } = gildedItem.update();
+      return new Item(item.name, sellIn, quality);
+    }
+
+    item.quality = new ShopItem(item).updateQuality();
+    const { quality, sellIn } = new ShopItem(item).updateSellIn();
 
     return new Item(item.name, sellIn, quality);
   }
